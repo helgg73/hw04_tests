@@ -1,0 +1,16 @@
+<!-- templates/posts/index.html -->
+{% extends 'base.html' %}
+  {% block pagetitle %}
+    Последние обновления на сайте
+  {% endblock %}
+  {% block content %}
+    <h1>Последние обновления на сайте</h1>
+    {% for post in page_obj %}
+      {% include 'includes/one_post.html' %}
+      {% if post.group%}
+        <a href="{% url 'posts:group_list' post.group.slug %}">все записи группы {{ post.group }}</a>
+      {% endif %}
+      {% if not forloop.last %}<hr>{% endif %}
+    {% endfor %}
+    {% include 'includes/paginator.html' %}
+  {% endblock %} 
