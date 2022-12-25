@@ -1,7 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
-from django import forms
 
 # Импортируем глобальные настройки
 from django.conf import settings
@@ -92,7 +91,6 @@ class PostsPagesTests(TestCase):
         # Проверяем данные автора
         self.assertEqual(response.context['author'], PostsPagesTests.user)
 
-
     def test_post_detail_page_show_correct_context(self):
         """Шаблон post_detail сформирован с правильным контекстом."""
         response = self.guest_client.get(reverse(
@@ -113,7 +111,7 @@ class PostsPagesTests(TestCase):
         # Тестируемые страницы
         testing_pages = (
             f'/posts/{PostsPagesTests.post.pk}/edit/',
-            '/create/'           
+            '/create/'
         )
         for url in testing_pages:
             with self.subTest(url=url):
@@ -152,9 +150,9 @@ class PostsPagesTests(TestCase):
         for i in range(settings.OBJECTS_ON_THE_PAGE + COUNT_POST_OVER - 1):
             bulk_data += [
                 Post(
-                    author = PostsPagesTests.user,
-                    text = f'Текст поста {i}',
-                    group = PostsPagesTests.group,
+                    author=PostsPagesTests.user,
+                    text=f'Текст поста {i}',
+                    group=PostsPagesTests.group,
                 )
             ]
         # Создаем посты
@@ -165,14 +163,14 @@ class PostsPagesTests(TestCase):
                 with self.subTest(url=url, page=page):
                     if args:
                         response = self.authorized_client.get(
-                            reverse(url, args=[args]), 
+                            reverse(url, args=[args]),
                             {'page': page}
-                            )
+                        )
                     else:
                         response = self.authorized_client.get(
-                            reverse(url), 
+                            reverse(url),
                             {'page': page}
-                            )
+                        )
                     self.assertEqual(
                         len(response.context['page_obj']),
                         count)

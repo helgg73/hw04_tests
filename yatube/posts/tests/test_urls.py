@@ -80,7 +80,7 @@ class PostsURLTests(TestCase):
         self.assertEquals(
             response.reason_phrase,
             'Not Found',
-            f'Ошибка несуществующего url'
+            'Ошибка несуществующего url'
         )
 
     def test_pages_for_author_access(self):
@@ -129,7 +129,7 @@ class PostsURLTests(TestCase):
     def test_url_redirect_for_unauthorized_access(self):
         """Тест перенаправления неавторизованного пользователя"""
         expected_redirect = {
-            PostsURLTests.post_edit_url: 
+            PostsURLTests.post_edit_url:
                 f'/auth/login/?next={PostsURLTests.post_edit_url}',
             PostsURLTests.post_create:
                 f'/auth/login/?next={PostsURLTests.post_create}',
