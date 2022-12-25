@@ -18,12 +18,6 @@ class CreatePageTest(TestCase):
             slug='test_group',
             description='Тестовое описание',
         )
-        # Создаем вторую тестовую группу
-        cls.group2 = Group.objects.create(
-            title='Тестовая группа',
-            slug='test_group2',
-            description='Тестовое описание',
-        )
         # Создаем пользователя
         cls.user = User.objects.create_user(username='JuniorTester')
 
@@ -34,8 +28,6 @@ class CreatePageTest(TestCase):
 
     def test_create_post(self):
         """Тестируем создание поста."""
-        # Проверяем количество постов
-        post_count = Post.objects.count()
         # Создаем форму для запроса POST
         form_data = {
             'text': 'Тестовый текст',
@@ -58,9 +50,20 @@ class CreatePageTest(TestCase):
         # Проверяем количество постов
         self.assertEqual(
             Post.objects.count(),
-            post_count + 1,
+            1,
             'Пост не добавлен'
         )
+        # Проверяем содержание поста
+        post = Post.objects.first()
+        self.assertEqual(post.author, CreatePageTest.user, (
+            'Ошибка создания поста, неверный автор'
+        ))
+        self.assertEqual(post.group, CreatePageTest.group, (
+            'Ошибка создания поста, неверная группа'
+        ))
+        self.assertEqual(post.text, 'Тестовый текст', (
+            'Ошибка создания поста, неверный текст'
+        ))
 
     def test_edit_post(self):
         """Тестируем редактирование текста поста."""
@@ -70,15 +73,20 @@ class CreatePageTest(TestCase):
             text='Тестовый пост',
             group=CreatePageTest.group
         )
-        post_id = post.pk
+        # Создваем вторую группу
+        self.new_group = Group.objects.create(
+            title='Новая группа',
+            slug='new_group',
+            description='Новое описание',
+        )
         # Готовим данные
         form_data = {
             'text': 'Отредактированный текст',
-            'group': CreatePageTest.group2.pk
+            'group': self.new_group.pk
         }
         # Отправляем POST-запрос
         response = self.authorized_client.post(
-            reverse('posts:post_edit', kwargs={'post_id': post_id}),
+            reverse('posts:post_edit', kwargs={'post_id': post.pk}),
             data=form_data,
             follow=True
         )
@@ -87,11 +95,15 @@ class CreatePageTest(TestCase):
             response,
             reverse(
                 'posts:post_detail',
-                kwargs={'post_id': post_id}
+                kwargs={'post_id': post.pk}
             )
         )
         # Проверяем текст поста
-        post = Post.objects.get(pk=post_id)
-        self.assertEqual(post.text, 'Отредактированный текст')
+        post = Post.objects.first()
+        self.assertEqual(post.text, 'Отредактированный текст', (
+            'Ошибка редактирования поста, неверный текст'
+        ))
         # Проверяем группу поста
-        self.assertEqual(post.group, CreatePageTest.group2)
+        self.assertEqual(post.group, self.new_group, (
+            'Ошибка редактирования поста, неверная группа'
+        ))

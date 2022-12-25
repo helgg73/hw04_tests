@@ -8,51 +8,48 @@ User = get_user_model()
 
 class PostsURLTests(TestCase):
     """Тест адресов и шаблонов страниц приложения Posts"""
-    def setUp(self):
-        # Устанавливаем данные для тестирования
-        # Создаём экземпляр клиента. Он неавторизован.
-        self.guest_client = Client()
-        # Создаем двух авторизованых клиентов
-        self.user = User.objects.create_user(username='JuniorTester')
-        self.authorized_client = Client()
-        self.authorized_client.force_login(self.user)
-        self.user2 = User.objects.create_user(username='JuniorHacker')
-        self.authorized_client2 = Client()
-        self.authorized_client2.force_login(self.user2)
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        # Создаем пользователя
+        cls.user = User.objects.create_user(username='JuniorTester')
         # Создаем тестовую группу
-        self.group = Group.objects.create(
+        cls.group = Group.objects.create(
             title='Тестовая группа',
             slug='test_group',
             description='Тестовое описание',
         )
         # Создаем тестовый пост
-        self.post = Post.objects.create(
-            author=self.user,
+        cls.post = Post.objects.create(
+            author=PostsURLTests.user,
             text='Тестовый пост',
-            group=self.group
+            group=PostsURLTests.group
         )
         # Тестируемые страницы
-        self.homepage = '/'
-        self.group_url = f'/group/{self.group.slug}/'
-        self.profile_url = f'/profile/{self.post.author}/'
-        self.post_url = f'/posts/{self.post.pk}/'
-        self.post_edit_url = f'/posts/{self.post.pk}/edit/'
-        self.post_create = '/create/'
-        self.unexisting_url = 'unexisting_url'
+        cls.homepage_url = '/'
+        cls.group_url = f'/group/{PostsURLTests.group.slug}/'
+        cls.profile_url = f'/profile/{PostsURLTests.post.author}/'
+        cls.post_url = f'/posts/{PostsURLTests.post.pk}/'
+        cls.post_edit_url = f'/posts/{PostsURLTests.post.pk}/edit/'
+        cls.post_create = '/create/'
+        cls.unexisting_url = 'unexisting_url'
 
-    def test_pages_for_unauthorized_access(self):
-        """Тест доступности для неавторизованного пользователя"""
+    def setUp(self):
+        # Устанавливаем данные для тестирования
+        # Создаём экземпляр клиента. Он неавторизован.
+        self.guest_client = Client()
+        # Создаем авторизованного клиента
+        self.authorized_client = Client()
+        self.authorized_client.force_login(PostsURLTests.user)
 
+    def test_public_pages(self):
+        """Тест доступности публичных страниц"""
         expected_reason_phrase = {
-            self.homepage: 'OK',
-            self.group_url: 'OK',
-            self.profile_url: 'OK',
-            self.post_url: 'OK',
-            self.post_edit_url: 'Found',
-            self.post_create: 'Found',
-            self.unexisting_url: 'Not Found',
+            PostsURLTests.homepage_url: 'OK',
+            PostsURLTests.group_url: 'OK',
+            PostsURLTests.profile_url: 'OK',
+            PostsURLTests.post_url: 'OK',
         }
-
         for value, expected in expected_reason_phrase.items():
             with self.subTest(url=value):
                 response = self.guest_client.get(value)
@@ -62,58 +59,83 @@ class PostsURLTests(TestCase):
                     f'страница {value} недоступна'
                 )
 
-    def test_pages_for_authorized_access(self):
-        """Тест доступности для авторизованного пользователя"""
+    def test_restricted_pages(self):
+        """Тест доступности неавторизованному пользователю
+        требующих авторизации страниц"""
         expected_reason_phrase = {
-            self.post_edit_url: 'Found',
-            self.post_create: 'OK',
+            PostsURLTests.post_edit_url: 'Found',
+            PostsURLTests.post_create: 'Found',
         }
-
         for value, expected in expected_reason_phrase.items():
             with self.subTest(url=value):
-                response = self.authorized_client2.get(value)
+                response = self.guest_client.get(value)
                 self.assertEquals(
                     response.reason_phrase,
                     expected,
-                    f'страница {value} недоступна'
+                    f'страница {value} доступна без авторизации'
                 )
 
-    def test_edit_post_for_author(self):
-        """Тест доступности редактирования для автора поста"""
-        response = self.authorized_client.get(self.post_edit_url)
+    def test_unexisting_url(self):
+        response = self.guest_client.get(PostsURLTests.unexisting_url)
         self.assertEquals(
             response.reason_phrase,
-            'OK',
-            'Страница редактирвоания поста недоступна'
+            'Not Found',
+            f'Ошибка несуществующего url'
         )
+
+    def test_pages_for_author_access(self):
+        """Тест доступности для пользователя - автора"""
+        expected_reason_phrase = {
+            PostsURLTests.post_edit_url: 'OK',
+            PostsURLTests.post_create: 'OK',
+        }
+        for value, expected in expected_reason_phrase.items():
+            with self.subTest(url=value):
+                response = self.authorized_client.get(value)
+                self.assertEquals(
+                    response.reason_phrase,
+                    expected,
+                    f'страница {value} не доступна автору'
+                )
+
+    def test_redirect_no_post_author(self):
+        """Тест редиректа для не-автора поста"""
+        self.user_new = User.objects.create_user(username='JuniorHacker')
+        self.authorized_client_new = Client()
+        self.authorized_client_new.force_login(self.user_new)
+        response = self.authorized_client_new.get(
+            PostsURLTests.post_edit_url, follow=True
+        )
+        self.assertRedirects(response, PostsURLTests.post_url)
 
     def test_templates(self):
         """Тест шаблонов"""
-
         expected_templates = {
-            self.homepage: 'posts/index.html',
-            self.group_url: 'posts/group_list.html',
-            self.profile_url: 'posts/profile.html',
-            self.post_url: 'posts/post_detail.html',
-            self.post_edit_url: 'posts/create_post.html',
-            self.post_create: 'posts/create_post.html',
+            PostsURLTests.homepage_url: 'posts/index.html',
+            PostsURLTests.group_url: 'posts/group_list.html',
+            PostsURLTests.profile_url: 'posts/profile.html',
+            PostsURLTests.post_url: 'posts/post_detail.html',
+            PostsURLTests.post_edit_url: 'posts/create_post.html',
+            PostsURLTests.post_create: 'posts/create_post.html',
         }
-
         for url, expected in expected_templates.items():
             with self.subTest(url=url):
                 response = self.authorized_client.get(url)
-                self.assertTemplateUsed(response, expected, f'страница {url}')
+                self.assertTemplateUsed(
+                    response,
+                    expected,
+                    f'Неверный шаблон страницы {url}')
 
-    def test_url_redirect(self):
-        response = self.guest_client.get(self.post_edit_url, follow=True)
-        self.assertRedirects(
-            response, f'/auth/login/?next={self.post_edit_url}'
-        )
-        response = self.guest_client.get(self.post_create, follow=True)
-        self.assertRedirects(
-            response, f'/auth/login/?next={self.post_create}'
-        )
-        response = self.authorized_client2.get(self.post_edit_url, follow=True)
-        self.assertRedirects(
-            response, self.post_url
-        )
+    def test_url_redirect_for_unauthorized_access(self):
+        """Тест перенаправления неавторизованного пользователя"""
+        expected_redirect = {
+            PostsURLTests.post_edit_url: 
+                f'/auth/login/?next={PostsURLTests.post_edit_url}',
+            PostsURLTests.post_create:
+                f'/auth/login/?next={PostsURLTests.post_create}',
+        }
+
+        for url, expected in expected_redirect.items():
+            with self.subTest(url=url):
+                response = self.guest_client.get(url, follow=True)
+                self.assertRedirects(response, expected)
