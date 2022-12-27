@@ -102,12 +102,6 @@ class PostsPagesTests(TestCase):
 
     def test_post_create_edit_pages_show_correct_context(self):
         """Шаблон create сформирован с правильным контекстом."""
-        # Создаем новую группу
-        self.group_new = Group.objects.create(
-            title='Вторая тестовая группа',
-            slug='test_group_new',
-            description='Тестовое новое описание',
-        )
         # Тестируемые страницы
         testing_pages = (
             f'/posts/{PostsPagesTests.post.pk}/edit/',
@@ -124,7 +118,7 @@ class PostsPagesTests(TestCase):
                 )
                 # Проверяем is_edit
                 self.assertIsNotNone(response.context['is_edit'])
-                if response.context['is_edit']:
+                if 'edit' in url:
                     self.assertEqual(
                         response.context['post_pk'],
                         PostsPagesTests.post.pk)
@@ -147,11 +141,11 @@ class PostsPagesTests(TestCase):
         # Готовим данные для создания постов,
         # один создан в setUpClass
         bulk_data = []
-        for i in range(settings.OBJECTS_ON_THE_PAGE + COUNT_POST_OVER - 1):
+        for index in range(settings.OBJECTS_ON_THE_PAGE + COUNT_POST_OVER - 1):
             bulk_data += [
                 Post(
                     author=PostsPagesTests.user,
-                    text=f'Текст поста {i}',
+                    text=f'Текст поста {index}',
                     group=PostsPagesTests.group,
                 )
             ]
@@ -174,3 +168,29 @@ class PostsPagesTests(TestCase):
                     self.assertEqual(
                         len(response.context['page_obj']),
                         count)
+
+    def test_correct_group_list(self):
+        # Создаем новую группу
+        self.group_new = Group.objects.create(
+            title='Вторая тестовая группа',
+            slug='test_group_new',
+            description='Тестовое новое описание',
+        )
+        # Создаем новый пост
+        Post.objects.create(
+            author=PostsPagesTests.user,
+            text='Тестовый пост',
+            group=PostsPagesTests.group
+        )
+        # Запрашиваем страницу новой группы
+        response = self.guest_client.get(
+            reverse(
+                'posts:group_list',
+                args=[self.group_new.slug]
+            )
+        )
+        # Проверяем, что пост не попал на не нужную страницу
+        self.assertEqual(
+            len(response.context['page_obj']),
+            0,
+            'Неверная выборка на странице группы')

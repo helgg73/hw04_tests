@@ -26,6 +26,32 @@ class CreatePageTest(TestCase):
         self.authorized_client = Client()
         self.authorized_client.force_login(CreatePageTest.user)
 
+    def test_no_authorized_create_post(self):
+        """Тестируем неавторизованное создание поста."""
+        guest_client = Client()
+        # Создаем форму для запроса POST
+        form_data = {
+            'text': 'Тестовый текст',
+            'group': CreatePageTest.group.pk,
+        }
+        # Отправляем POST-запрос неавторизованным пользвателем
+        response = guest_client.post(
+            reverse('posts:post_create'),
+            data=form_data,
+            follow=True
+        )
+        # Проверяем редирект
+        self.assertRedirects(
+            response,
+            '/auth/login/?next=/create/'
+        )
+        # Проверяем количество постов
+        self.assertEqual(
+            Post.objects.count(),
+            0,
+            'Пост добавлен неавторизованным пользователем'
+        )
+
     def test_create_post(self):
         """Тестируем создание поста."""
         # Создаем форму для запроса POST
@@ -33,7 +59,7 @@ class CreatePageTest(TestCase):
             'text': 'Тестовый текст',
             'group': CreatePageTest.group.pk,
         }
-        # Отправляем POST-запрос
+        # Отправляем POST-запрос авторизованным пользвателем
         response = self.authorized_client.post(
             reverse('posts:post_create'),
             data=form_data,
