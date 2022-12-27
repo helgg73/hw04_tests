@@ -43,7 +43,7 @@ class UsersURLTests(TestCase):
         for value, expected in expected_status_code.items():
             with self.subTest(url=value):
                 response = self.guest_client.get(value)
-                self.assertEquals(
+                self.assertEqual(
                     response.status_code,
                     expected,
                     f'страница {value}'
@@ -59,7 +59,7 @@ class UsersURLTests(TestCase):
         for value, expected in expected_status_code.items():
             with self.subTest(url=value):
                 response = self.authorized_client.get(value)
-                self.assertEquals(
+                self.assertEqual(
                     response.status_code,
                     expected, f'страница {value}'
                 )

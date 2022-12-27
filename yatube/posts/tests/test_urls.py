@@ -54,7 +54,7 @@ class PostsURLTests(TestCase):
         for public_url in public_urls:
             with self.subTest(public_url=public_url):
                 response = self.guest_client.get(public_url)
-                self.assertEquals(
+                self.assertEqual(
                     response.status_code,
                     HTTPStatus.OK,
                     f'страница {public_url} недоступна'
@@ -74,7 +74,7 @@ class PostsURLTests(TestCase):
 
     def test_unexisting_url(self):
         response = self.guest_client.get(PostsURLTests.unexisting_url)
-        self.assertEquals(
+        self.assertEqual(
             response.status_code,
             HTTPStatus.NOT_FOUND,
             'Ошибка несуществующего url'
@@ -89,7 +89,7 @@ class PostsURLTests(TestCase):
         for url_for_author_access in urls_for_author_access:
             with self.subTest(url_for_author_access=url_for_author_access):
                 response = self.authorized_client.get(url_for_author_access)
-                self.assertEquals(
+                self.assertEqual(
                     response.status_code,
                     HTTPStatus.OK,
                     f'страница {url_for_author_access} не доступна автору'
