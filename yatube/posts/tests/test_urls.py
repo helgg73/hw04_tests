@@ -55,32 +55,28 @@ class PostsURLTests(TestCase):
             with self.subTest(public_url=public_url):
                 response = self.guest_client.get(public_url)
                 self.assertEquals(
-                    response.reason_phrase,
-                    HTTPStatus.OK.phrase,
+                    response.status_code,
+                    HTTPStatus.OK,
                     f'страница {public_url} недоступна'
                 )
 
     def test_restricted_pages(self):
         """Тест доступности неавторизованному пользователю
         требующих авторизации страниц"""
-        restricted_pages = (
-            PostsURLTests.post_edit_url,
-            PostsURLTests.post_create,
-        )
-        for restricted_url in restricted_pages:
+        restricted_pages = {
+            PostsURLTests.post_edit_url: '/auth/login/?next=/posts/1/edit/',
+            PostsURLTests.post_create: '/auth/login/?next=/create/',
+        }
+        for restricted_url, redirect_url in restricted_pages.items():
             with self.subTest(restricted_url=restricted_url):
                 response = self.guest_client.get(restricted_url)
-                self.assertEquals(
-                    response.reason_phrase,
-                    HTTPStatus.FOUND.phrase,
-                    f'страница {restricted_url} доступна без авторизации'
-                )
+                self.assertRedirects(response, redirect_url)
 
     def test_unexisting_url(self):
         response = self.guest_client.get(PostsURLTests.unexisting_url)
         self.assertEquals(
-            response.reason_phrase,
-            HTTPStatus.NOT_FOUND.phrase,
+            response.status_code,
+            HTTPStatus.NOT_FOUND,
             'Ошибка несуществующего url'
         )
 
@@ -94,8 +90,8 @@ class PostsURLTests(TestCase):
             with self.subTest(url_for_author_access=url_for_author_access):
                 response = self.authorized_client.get(url_for_author_access)
                 self.assertEquals(
-                    response.reason_phrase,
-                    HTTPStatus.OK.phrase,
+                    response.status_code,
+                    HTTPStatus.OK,
                     f'страница {url_for_author_access} не доступна автору'
                 )
 

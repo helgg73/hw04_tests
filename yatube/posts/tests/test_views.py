@@ -116,27 +116,24 @@ class PostsPagesTests(TestCase):
                     response.context['form'],
                     PostForm
                 )
-                # Проверяем is_edit
-                self.assertIsNotNone(response.context['is_edit'])
-                # Проверяем содержание формы
+                # Проверяем контекст страницы редактирования
                 if 'edit' in url:
                     self.assertEqual(
-                        response.context['post_pk'],
-                        PostsPagesTests.post.pk)
-                    form = response.context['form']
-                    self.assertEqual(
-                        form['text'].value(),
-                        PostsPagesTests.post.text
+                        response.context['is_edit'],
+                        True
                     )
                     self.assertEqual(
-                        form['group'].value(),
-                        PostsPagesTests.post.group.pk
+                        response.context['post_pk'],
+                        PostsPagesTests.post.pk
+                    )
+                else:
+                    self.assertEqual(
+                        response.context['is_edit'],
+                        False
                     )
 
     def test_paginator(self):
         """Тест пажинатора"""
-        # Постов больше лимита пажинатора
-        COUNT_POST_OVER = 1
         # Страницы с пажинатором
         paginated_urls = (
             ['posts:index', None],
@@ -146,12 +143,12 @@ class PostsPagesTests(TestCase):
         # Ожидаемое количество постов на страницах
         pages = (
             (1, settings.OBJECTS_ON_THE_PAGE),
-            (2, COUNT_POST_OVER)
+            (2, 1)
         )
         # Готовим данные для создания постов,
         # один создан в setUpClass
         bulk_data = []
-        for index in range(settings.OBJECTS_ON_THE_PAGE + COUNT_POST_OVER - 1):
+        for index in range(1, settings.OBJECTS_ON_THE_PAGE):
             bulk_data += [
                 Post(
                     author=PostsPagesTests.user,
