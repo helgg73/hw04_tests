@@ -118,10 +118,20 @@ class PostsPagesTests(TestCase):
                 )
                 # Проверяем is_edit
                 self.assertIsNotNone(response.context['is_edit'])
+                # Проверяем содержание формы
                 if 'edit' in url:
                     self.assertEqual(
                         response.context['post_pk'],
                         PostsPagesTests.post.pk)
+                    form = response.context['form']
+                    self.assertEqual(
+                        form['text'].value(),
+                        PostsPagesTests.post.text
+                    )
+                    self.assertEqual(
+                        form['group'].value(),
+                        PostsPagesTests.post.group.pk
+                    )
 
     def test_paginator(self):
         """Тест пажинатора"""
