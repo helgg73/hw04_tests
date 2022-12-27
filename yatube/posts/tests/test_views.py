@@ -148,7 +148,7 @@ class PostsPagesTests(TestCase):
         # Готовим данные для создания постов,
         # один создан в setUpClass
         bulk_data = []
-        for index in range(1, settings.OBJECTS_ON_THE_PAGE):
+        for index in range(settings.OBJECTS_ON_THE_PAGE):
             bulk_data += [
                 Post(
                     author=PostsPagesTests.user,

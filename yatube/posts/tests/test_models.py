@@ -31,7 +31,7 @@ class PostModelTest(TestCase):
         }
         for value, expected in tested_model.items():
             with self.subTest(model=value):
-                self.assertEquals(str(value), expected)
+                self.assertEqual(str(value), expected)
 
     def test_verbose_name(self):
         """verbose_name в полях совпадает с ожидаемым."""
